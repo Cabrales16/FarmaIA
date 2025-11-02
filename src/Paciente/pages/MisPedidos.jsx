@@ -151,7 +151,7 @@ const MisPedidos = () => {
       {/* Bienvenida */}
       <div className="text-white bg-blue-500 m-6 p-6 rounded-2xl shadow-md">
         <p className="text-lg font-medium">
-          Bienvenido, <span className="font-bold">{nombre}</span>.
+          Bienvenido, paciente <span className="font-bold">{nombre}</span>.
         </p>
         <p className="mt-2 text-sm text-blue-100">
           Gestione sus pedidos de medicamentos y consulte el estado de entregas.

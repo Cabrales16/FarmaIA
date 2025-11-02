@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Select from "react-select";
 import supabase from "../../../api/supabase";
+import toast from "react-hot-toast";
 
 const FormPacientes = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -15,7 +16,7 @@ const FormPacientes = () => {
     const fetchData = async () => {
       try {
         const [usuariosRes, regimenesRes, epsRes, municipiosRes] = await Promise.all([
-          supabase.from("usuario").select("*").eq("perfil_id", 3),
+          supabase.from("usuario").select("id, nombre, documento").eq("perfil_id", 3),
           supabase.from("regimen").select("id, tipo"),
           supabase.from("eps").select("id, nombre"),
           supabase.from("municipios").select("id, nombre"),
@@ -26,6 +27,7 @@ const FormPacientes = () => {
         if (epsRes.data) setEpsList(epsRes.data);
         if (municipiosRes.data) setMunicipios(municipiosRes.data);
       } catch (error) {
+        toast.error("Error cargando datos.");
         console.error("Error cargando datos:", error);
       }
     };
@@ -33,27 +35,13 @@ const FormPacientes = () => {
     fetchData();
   }, []);
 
-  // Opciones para selects
   const usuarioOptions = usuarios.map((u) => ({
     value: u.id,
     label: `${u.nombre} (${u.documento})`,
   }));
-
-  const regimenOptions = regimenes.map((r) => ({
-    value: r.id,
-    label: r.tipo,
-  }));
-
-  const epsOptions = epsList.map((e) => ({
-    value: e.id,
-    label: e.nombre,
-  }));
-
-  const municipioOptions = municipios.map((m) => ({
-    value: m.id,
-    label: m.nombre,
-  }));
-
+  const regimenOptions = regimenes.map((r) => ({ value: r.id, label: r.tipo }));
+  const epsOptions = epsList.map((e) => ({ value: e.id, label: e.nombre }));
+  const municipioOptions = municipios.map((m) => ({ value: m.id, label: m.nombre }));
   const vulnerabilidadOptions = [
     { value: "BAJO", label: "Bajo" },
     { value: "MEDIO", label: "Medio" },
@@ -69,94 +57,44 @@ const FormPacientes = () => {
       nivel_vulnerabilidad: formData.vulnerabilidad?.value || null,
     };
 
-    const { data, error } = await supabase
-      .from("pacientes")
-      .insert(paciente)
-      .select();
-
+    const { error } = await supabase.from("pacientes").insert(paciente);
     if (error) {
-      console.error("Error insertando paciente:", error);
-      alert("❌ Error al crear el paciente.");
+      console.error(error);
+      toast.error("Error al crear el paciente.");
     } else {
-      console.log("Paciente creado:", data);
-      alert("✅ Paciente creado con éxito.");
-      reset(); // Limpia el formulario
+      toast.success("Paciente creado con éxito.");
+      reset();
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-white shadow-md rounded-md">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        {/* Paciente */}
-        <div>
-          <label className="block mb-1 font-medium">Paciente</label>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {[
+        { name: "paciente", label: "Paciente", options: usuarioOptions },
+        { name: "regimen", label: "Régimen", options: regimenOptions },
+        { name: "eps", label: "EPS", options: epsOptions },
+        { name: "municipio", label: "Municipio", options: municipioOptions },
+        { name: "vulnerabilidad", label: "Nivel de vulnerabilidad", options: vulnerabilidadOptions },
+      ].map((field) => (
+        <div key={field.name}>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
           <Controller
-            name="paciente"
+            name={field.name}
             control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-              <Select {...field} options={usuarioOptions} placeholder="Elige un paciente..." />
+            render={({ field: ctrl }) => (
+              <Select {...ctrl} options={field.options} placeholder={`Selecciona ${field.label.toLowerCase()}...`} />
             )}
           />
         </div>
+      ))}
 
-        {/* Régimen */}
-        <div>
-          <label className="block mb-1 font-medium">Régimen</label>
-          <Controller
-            name="regimen"
-            control={control}
-            render={({ field }) => (
-              <Select {...field} options={regimenOptions} placeholder="Selecciona el régimen..." />
-            )}
-          />
-        </div>
-
-        {/* EPS */}
-        <div>
-          <label className="block mb-1 font-medium">EPS</label>
-          <Controller
-            name="eps"
-            control={control}
-            render={({ field }) => (
-              <Select {...field} options={epsOptions} placeholder="Selecciona la EPS..." />
-            )}
-          />
-        </div>
-
-        {/* Municipio */}
-        <div>
-          <label className="block mb-1 font-medium">Municipio</label>
-          <Controller
-            name="municipio"
-            control={control}
-            render={({ field }) => (
-              <Select {...field} options={municipioOptions} placeholder="Selecciona el municipio..." />
-            )}
-          />
-        </div>
-
-        {/* Nivel de vulnerabilidad */}
-        <div>
-          <label className="block mb-1 font-medium">Nivel de vulnerabilidad</label>
-          <Controller
-            name="vulnerabilidad"
-            control={control}
-            render={({ field }) => (
-              <Select {...field} options={vulnerabilidadOptions} placeholder="Selecciona el nivel..." />
-            )}
-          />
-        </div>
-
-        {/* Botón enviar */}
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md w-full"
-        >
-          Crear paciente
-        </button>
-      </form>
-    </div>
+      <button
+        type="submit"
+        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition"
+      >
+        Crear Paciente
+      </button>
+    </form>
   );
 };
 
