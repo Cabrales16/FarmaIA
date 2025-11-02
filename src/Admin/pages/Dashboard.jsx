@@ -3,12 +3,26 @@ import {
   FaTruck,
   FaClipboardList,
   FaUsers,
+  FaChartPie,
   FaRoute,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import supabase from "../../api/supabase";
 import UseAuth from "../../context/UseAuth";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +34,8 @@ const Dashboard = () => {
   const [pedidosEntregados, setPedidosEntregados] = useState(0);
   const [totalPacientes, setTotalPacientes] = useState(0);
   const [pedidosRecientes, setPedidosRecientes] = useState([]);
+  const [estadisticaMensual, setEstadisticaMensual] = useState([]);
+  const [estadoPedidos, setEstadoPedidos] = useState([]);
 
   // 🔹 Obtener nombre del administrador autenticado
   useEffect(() => {
@@ -41,7 +57,7 @@ const Dashboard = () => {
     if (userId) fetchAdmin();
   }, [userId]);
 
-  // 🔹 Obtener estadísticas
+  // 🔹 Obtener estadísticas principales
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -70,7 +86,7 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
-  // 🔹 Obtener pedidos recientes con join anidado correcto
+  // 🔹 Obtener pedidos recientes y estadísticas por mes/estado
   useEffect(() => {
     const fetchPedidos = async () => {
       try {
@@ -92,7 +108,7 @@ const Dashboard = () => {
             )
           `)
           .order("fecha_pedido", { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (error) throw error;
 
@@ -104,7 +120,30 @@ const Dashboard = () => {
           fecha: new Date(p.fecha_pedido).toLocaleDateString("es-CO"),
         }));
 
+        // Contar pedidos por mes
+        const porMes = {};
+        data.forEach((p) => {
+          const mes = new Date(p.fecha_pedido).toLocaleString("es-CO", { month: "short" });
+          porMes[mes] = (porMes[mes] || 0) + 1;
+        });
+        const estadistica = Object.entries(porMes).map(([mes, cantidad]) => ({
+          mes,
+          cantidad,
+        }));
+
+        // Contar pedidos por estado
+        const porEstado = data.reduce((acc, p) => {
+          acc[p.estado] = (acc[p.estado] || 0) + 1;
+          return acc;
+        }, {});
+        const estados = Object.entries(porEstado).map(([estado, cantidad]) => ({
+          name: estado,
+          value: cantidad,
+        }));
+
         setPedidosRecientes(pedidosFormateados);
+        setEstadisticaMensual(estadistica);
+        setEstadoPedidos(estados);
       } catch (err) {
         console.error("Error al obtener pedidos recientes:", err);
         toast.error("Error al cargar pedidos recientes");
@@ -112,6 +151,9 @@ const Dashboard = () => {
     };
     fetchPedidos();
   }, []);
+
+  // Colores para gráficos
+  const COLORS = ["#2563EB", "#10B981", "#F59E0B", "#EF4444"];
 
   return (
     <div className="bg-gray-50 min-h-screen flex-1">
@@ -121,56 +163,97 @@ const Dashboard = () => {
       </div>
 
       {/* Bienvenida */}
-      <div className="text-white bg-blue-600 m-6 p-6 rounded-2xl shadow-md">
+      <div className="text-white bg-blue-500 m-6 p-6 rounded-2xl shadow-md">
         <p className="text-lg font-medium">
-          Bienvenido, Administrador<span className="font-bold"> {adminName}</span>.
+          Bienvenido, administrador <span className="font-bold">{adminName}</span>.
         </p>
         <p className="mt-2 text-sm text-blue-100">
           Supervise pedidos, rutas de entrega y el estado general del sistema FarmaIA.
         </p>
       </div>
 
-      {/* Estadísticas */}
+      {/* Estadísticas generales */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 px-6">
-        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between">
-          <div>
-            <h2 className="text-gray-500 text-sm uppercase font-semibold">Pedidos Activos</h2>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{pedidosActivos}</p>
-          </div>
-          <div className="bg-blue-500 h-14 w-14 rounded-xl flex items-center justify-center text-white text-2xl">
-            <FaClipboardList />
-          </div>
+        <StatCard
+          title="Pedidos Activos"
+          value={pedidosActivos}
+          icon={<FaClipboardList />}
+          color="bg-blue-500"
+        />
+        <StatCard
+          title="Pacientes"
+          value={totalPacientes}
+          icon={<FaUsers />}
+          color="bg-green-500"
+        />
+        <StatCard
+          title="Entregados"
+          value={pedidosEntregados}
+          icon={<FaTruck />}
+          color="bg-yellow-500"
+        />
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 m-6">
+        {/* Pedidos por mes */}
+        <div className="bg-white p-6 rounded-2xl shadow-md">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+            <FaRoute className="text-blue-500" /> Pedidos por mes
+          </h2>
+          {estadisticaMensual.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={estadisticaMensual}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mes" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="cantidad" stroke="#2563EB" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500 text-sm">No hay datos suficientes para mostrar.</p>
+          )}
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between">
-          <div>
-            <h2 className="text-gray-500 text-sm uppercase font-semibold">Pacientes</h2>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{totalPacientes}</p>
-          </div>
-          <div className="bg-green-500 h-14 w-14 rounded-xl flex items-center justify-center text-white text-2xl">
-            <FaUsers />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between">
-          <div>
-            <h2 className="text-gray-500 text-sm uppercase font-semibold">Entregados</h2>
-            <p className="text-3xl font-bold text-gray-800 mt-1">{pedidosEntregados}</p>
-          </div>
-          <div className="bg-yellow-500 h-14 w-14 rounded-xl flex items-center justify-center text-white text-2xl">
-            <FaTruck />
-          </div>
+        {/* Pedidos por estado */}
+        <div className="bg-white p-6 rounded-2xl shadow-md">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+            <FaChartPie className="text-blue-500" /> Distribución de pedidos por estado
+          </h2>
+          {estadoPedidos.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={estadoPedidos}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label
+                  dataKey="value"
+                >
+                  {estadoPedidos.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500 text-sm">No hay datos disponibles.</p>
+          )}
         </div>
       </div>
 
       {/* Pedidos recientes */}
-      <div className="m-6 mt-10 bg-white p-6 rounded-2xl shadow-md">
+      <div className="m-6 bg-white p-6 rounded-2xl shadow-md">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
             <FaClipboardList className="text-blue-500" /> Pedidos recientes
           </h2>
           <button
-            onClick={() => navigate("/admin/pedidos")}
+            onClick={() => navigate("/inicio/pedidos")}
             className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
           >
             Ver todos →
@@ -195,7 +278,7 @@ const Dashboard = () => {
                       className={`font-medium ${
                         pedido.estado === "entregado"
                           ? "text-green-600"
-                          : pedido.estado === "en camino"
+                          : pedido.estado === "en_ruta"
                           ? "text-blue-600"
                           : "text-yellow-600"
                       }`}
@@ -218,5 +301,18 @@ const Dashboard = () => {
     </div>
   );
 };
+
+// 📊 Componente auxiliar para tarjetas de estadísticas
+const StatCard = ({ title, value, icon, color }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between">
+    <div>
+      <h2 className="text-gray-500 text-sm uppercase font-semibold">{title}</h2>
+      <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
+    </div>
+    <div className={`${color} h-14 w-14 rounded-xl flex items-center justify-center text-white text-2xl`}>
+      {icon}
+    </div>
+  </div>
+);
 
 export default Dashboard;

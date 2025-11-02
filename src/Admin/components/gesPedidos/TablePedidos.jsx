@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import supabase from "../../../api/supabase";
 import { FaBoxOpen, FaTruck, FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 
-const TablePedidos = () => {
+const TablePedidos = ({ filtros, busqueda }) => {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,25 +24,32 @@ const TablePedidos = () => {
       if (!error) setPedidos(data || []);
       setLoading(false);
     };
-
     fetchPedidos();
   }, []);
 
-  if (loading)
-    return (
-      <div className="text-gray-500 text-center py-6 animate-pulse">
-        Cargando pedidos...
-      </div>
-    );
+  // Filtrado local
+  const pedidosFiltrados = useMemo(() => {
+    return pedidos.filter((p) => {
+      const nombre = p.pacientes?.usuario?.nombre?.toLowerCase() || "";
+      const termino = busqueda.toLowerCase().trim();
 
-  if (pedidos.length === 0)
-    return (
-      <div className="text-gray-500 text-center py-6">
-        No hay pedidos registrados.
-      </div>
-    );
+      const matchBusqueda = termino === "" || nombre.includes(termino);
+      const matchEstado =
+        filtros.estado.length === 0 || filtros.estado.includes(p.estado);
+      const matchPrioridad =
+        filtros.prioridad.length === 0 || filtros.prioridad.includes(p.prioridad);
 
-  // 🔹 Ícono según estado
+      const fechaPedido = new Date(p.fecha_pedido);
+      const desde = filtros.fechaDesde ? new Date(filtros.fechaDesde) : null;
+      const hasta = filtros.fechaHasta ? new Date(filtros.fechaHasta) : null;
+
+      const matchFechas =
+        (!desde || fechaPedido >= desde) && (!hasta || fechaPedido <= hasta);
+
+      return matchBusqueda && matchEstado && matchPrioridad && matchFechas;
+    });
+  }, [pedidos, filtros, busqueda]);
+
   const getEstadoIcon = (estado) => {
     switch (estado) {
       case "pendiente":
@@ -58,10 +65,16 @@ const TablePedidos = () => {
     }
   };
 
+  if (loading)
+    return <div className="text-gray-500 text-center py-6 animate-pulse">Cargando pedidos...</div>;
+
+  if (pedidosFiltrados.length === 0)
+    return <div className="text-gray-500 text-center py-6">No hay pedidos que coincidan con los filtros.</div>;
+
   return (
     <div className="overflow-hidden border border-gray-200 rounded-xl">
       <div className="overflow-x-auto">
-        <div className="max-h-[55vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <div className="max-h-[65vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
           <table className="min-w-full text-sm text-left border-collapse">
             <thead className="bg-blue-600 text-white text-xs uppercase tracking-wide sticky top-0 z-10">
               <tr>
@@ -73,11 +86,8 @@ const TablePedidos = () => {
               </tr>
             </thead>
             <tbody className="bg-white">
-              {pedidos.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-t hover:bg-blue-50 transition duration-150"
-                >
+              {pedidosFiltrados.map((p) => (
+                <tr key={p.id} className="border-t hover:bg-blue-50 transition duration-150">
                   <td className="px-6 py-3 font-medium text-gray-800 whitespace-nowrap">
                     {p.pacientes?.usuario?.nombre || "—"}
                   </td>

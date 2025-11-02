@@ -10,7 +10,7 @@ const GestionPacientes = () => {
       <PacienteHeader />
 
       {/* Sección principal */}
-      <div className="flex-1 p-4 lg:p-5 space-y-4 overflow-hidden">
+      <div className="flex-1 p-6 lg:p-6 space-y-4 overflow-hidden">
         {/* Crear paciente + Lista */}
         <div className="flex flex-col lg:flex-row gap-4 h-[60vh]">
           <div className="flex-1">

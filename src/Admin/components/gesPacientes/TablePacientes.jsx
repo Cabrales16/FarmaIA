@@ -110,15 +110,15 @@ const TablePacientes = () => {
     );
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden p-1">
       {/* Barra superior */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-3 p-4 border-b border-gray-200">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-3 py-4 border-gray-200">
         <PacienteSearchBar busqueda={busqueda} setBusqueda={setBusqueda} />
         <PacienteFilters filtros={filtros} setFiltros={setFiltros} />
       </div>
 
       {/* Tabla o mensaje sin resultados */}
-      <div className="overflow-x-auto overflow-y-auto max-h-[45vh] scrollbar-thin scrollbar-thumb-gray-300">
+      <div className="overflow-x-auto overflow-y-auto max-h-[45vh] scrollbar-thin scrollbar-thumb-gray-300 border border-gray-200 rounded-xl">
         {pacientesFiltrados.length > 0 ? (
           <table className="min-w-full text-sm text-left">
             <thead className="bg-blue-600 text-white text-xs uppercase tracking-wide">
