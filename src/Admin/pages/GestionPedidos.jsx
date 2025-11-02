@@ -1,18 +1,19 @@
-import FormPedidos from "../components/gesPedidos/FormPedidos";
-import TablePedidos from "../components/gesPedidos/TablePedidos";
-import SideBar from "../components/SideBar";
+import PedidosHeader from "../components/gesPedidos/PedidosHeader";
+import PedidosFormCard from "../components/gesPedidos/PedidosFormCard";
+import PedidosTableCard from "../components/gesPedidos/PedidosTableCard";
 
 const GestionPedidos = () => {
   return (
-    <div className="flex">
-      <SideBar />
-      <div className="flex flex-col ml-64 lg:flex-row gap-6 items-start">
-        <div className="w-full lg:max-w-md max-h-[85vh] overflow-y-auto">
-          <FormPedidos />
-        </div>
+    <div className="bg-gray-50 min-h-screen flex-1">
+      {/* Encabezado */}
+      <PedidosHeader />
 
-        <div className="w-full lg:flex-1">
-          <TablePedidos />
+      {/* Sección principal */}
+      <div className="p-6 space-y-4">
+        {/* Crear pedido + Lista */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          <PedidosFormCard />
+          <PedidosTableCard />
         </div>
       </div>
     </div>
