@@ -1,3 +1,4 @@
+// src/Admin/pages/DashboardAdmin.jsx
 import { useEffect, useState } from "react";
 import {
   FaTruck,
@@ -37,7 +38,7 @@ const Dashboard = () => {
   const [estadisticaMensual, setEstadisticaMensual] = useState([]);
   const [estadoPedidos, setEstadoPedidos] = useState([]);
 
-  // 🔹 Obtener nombre del administrador
+  // Nombre del admin
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
@@ -57,7 +58,7 @@ const Dashboard = () => {
     if (userId) fetchAdmin();
   }, [userId]);
 
-  // 🔹 Obtener estadísticas principales
+  // KPIs
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -86,7 +87,7 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
-  // 🔹 Obtener pedidos recientes
+  // Pedidos recientes + gráficos
   useEffect(() => {
     const fetchPedidos = async () => {
       try {
@@ -112,36 +113,31 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        const pedidosFormateados = data.map((p) => ({
+        const pedidosFormateados = (data || []).map((p) => ({
           id: p.id,
           paciente: p.pacientes?.usuario?.nombre || "Desconocido",
           medicamento:
             p.pedido_detalle?.[0]?.medicamentos?.nombre ||
             "Medicamento no especificado",
           estado: p.estado,
-          fecha: new Date(p.fecha_pedido).toLocaleDateString("es-CO"),
+          fecha: p.fecha_pedido
+            ? new Date(p.fecha_pedido).toLocaleDateString("es-CO")
+            : "-",
         }));
 
         const porMes = {};
-        data.forEach((p) => {
-          const mes = new Date(p.fecha_pedido).toLocaleString("es-CO", {
-            month: "short",
-          });
+        (data || []).forEach((p) => {
+          if (!p.fecha_pedido) return;
+          const mes = new Date(p.fecha_pedido).toLocaleString("es-CO", { month: "short" });
           porMes[mes] = (porMes[mes] || 0) + 1;
         });
-        const estadistica = Object.entries(porMes).map(([mes, cantidad]) => ({
-          mes,
-          cantidad,
-        }));
+        const estadistica = Object.entries(porMes).map(([mes, cantidad]) => ({ mes, cantidad }));
 
-        const porEstado = data.reduce((acc, p) => {
+        const porEstado = (data || []).reduce((acc, p) => {
           acc[p.estado] = (acc[p.estado] || 0) + 1;
           return acc;
         }, {});
-        const estados = Object.entries(porEstado).map(([estado, cantidad]) => ({
-          name: estado,
-          value: cantidad,
-        }));
+        const estados = Object.entries(porEstado).map(([estado, cantidad]) => ({ name: estado, value: cantidad }));
 
         setPedidosRecientes(pedidosFormateados);
         setEstadisticaMensual(estadistica);
@@ -173,31 +169,16 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* 🔹 Botón de generar ruta */}
+      {/* Botón IA de rutas (con selector) */}
       <div className="m-6">
         <GenerarRutaButton />
       </div>
 
-      {/* Estadísticas generales */}
+      {/* Estadísticas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 px-6">
-        <StatCard
-          title="Pedidos Activos"
-          value={pedidosActivos}
-          icon={<FaClipboardList />}
-          color="bg-blue-500"
-        />
-        <StatCard
-          title="Pacientes"
-          value={totalPacientes}
-          icon={<FaUsers />}
-          color="bg-green-500"
-        />
-        <StatCard
-          title="Entregados"
-          value={pedidosEntregados}
-          icon={<FaTruck />}
-          color="bg-yellow-500"
-        />
+        <StatCard title="Pedidos Activos" value={pedidosActivos} icon={<FaClipboardList />} color="bg-blue-500" />
+        <StatCard title="Pacientes" value={totalPacientes} icon={<FaUsers />} color="bg-green-500" />
+        <StatCard title="Entregados" value={pedidosEntregados} icon={<FaTruck />} color="bg-yellow-500" />
       </div>
 
       {/* Gráficos */}
@@ -228,14 +209,7 @@ const Dashboard = () => {
           {estadoPedidos.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie
-                  data={estadoPedidos}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label
-                  dataKey="value"
-                >
+                <Pie data={estadoPedidos} cx="50%" cy="50%" outerRadius={80} label dataKey="value">
                   {estadoPedidos.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
@@ -306,7 +280,7 @@ const Dashboard = () => {
   );
 };
 
-// 📊 Componente auxiliar para tarjetas de estadísticas
+// Tarjetas KPI
 const StatCard = ({ title, value, icon, color }) => (
   <div className="bg-white p-6 rounded-2xl shadow-md flex items-center justify-between">
     <div>
