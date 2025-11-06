@@ -1,3 +1,4 @@
+import { Routes, Route, Navigate } from "react-router-dom";
 import UseAuth from "../context/UseAuth";
 import PacienteRouter from "../Paciente/PacienteRouter";
 import AdminRouter from "../Admin/AdminRouter";
@@ -5,8 +6,11 @@ import AdminRouter from "../Admin/AdminRouter";
 export default function DashboardRouter() {
   const { rol } = UseAuth();
 
-  if (rol === 1) return <AdminRouter />;
-  if (rol === 3) return <PacienteRouter />;
-
-  return <h2>No se puede acceder</h2>;
+  return (
+    <Routes>
+      {rol === 1 && <Route path="/*" element={<AdminRouter />} />}
+      {rol === 3 && <Route path="/*" element={<PacienteRouter />} />}
+      <Route path="*" element={<Navigate to="/home" replace />} />
+    </Routes>
+  );
 }

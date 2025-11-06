@@ -1,22 +1,24 @@
-//Rutas del admin
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+import AdminLayout from "./AdminLayout";
+
+// Páginas del administrador
 import Dashboard from "./pages/Dashboard";
-import NuevoPedido from "./pages/NuevoPedido";
-import Historial from "./pages/Historial";
 import GestionPacientes from "./pages/GestionPacientes";
 import GestionPedidos from "./pages/GestionPedidos";
 
 export default function AdminRouter() {
+  return (
+    <Routes>
+      <Route element={<AdminLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
 
-    return (
-            <Routes>
-                <Route path="/*" element={<Dashboard />} />
-                <Route path="dashboard/*" element={<Dashboard />} />
-                <Route path="historial/*" element={<Historial />} />
-                <Route path="nuevo-pedido/*" element={<NuevoPedido />} />
-                <Route path="paciente/*" element={<GestionPacientes />} />
-                <Route path="pedidos/*" element={<GestionPedidos />} />
-            </Routes>
-    );
-    
+        {/* Páginas del administrador */}
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="pedidos" element={<GestionPedidos />} />
+        <Route path="paciente" element={<GestionPacientes />} />
+
+        <Route path="*" element={<Dashboard />} />
+      </Route>
+    </Routes>
+  );
 }

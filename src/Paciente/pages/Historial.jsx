@@ -9,6 +9,8 @@ import {
   FaRoute,
 } from "react-icons/fa";  
 import UseAuth from "../../context/UseAuth";
+import Paginacion from "../components/Historial/Paginacion";
+import FiltroEstados from "../components/Historial/FiltroEstados";
 
 const Historial = () => {
   const [pedidos, setPedidos] = useState([]);
@@ -16,10 +18,16 @@ const Historial = () => {
   const [error, setError] = useState(null);
   const [pacienteId, setPacienteId] = useState(null);
 
-  // 🔑 Usuario autenticado desde tu contexto
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(11);
+
+  // Filtro por estado
+  const [filtroEstado, setFiltroEstado] = useState("");
+
   const { userId } = UseAuth();
 
-  // 1️⃣ Buscar paciente según el userId del auth
+  // Cargar paciente
   useEffect(() => {
     if (!userId) return;
 
@@ -30,7 +38,6 @@ const Historial = () => {
           .select("id")
           .eq("auth_id", userId)
           .single();
-
         if (usuarioError) throw usuarioError;
         if (!usuarioData) throw new Error("Usuario no encontrado.");
 
@@ -39,7 +46,6 @@ const Historial = () => {
           .select("id")
           .eq("usuario_id", usuarioData.id)
           .single();
-
         if (pacienteError) throw pacienteError;
         if (!pacienteData) throw new Error("Paciente no encontrado.");
 
@@ -53,7 +59,7 @@ const Historial = () => {
     loadPaciente();
   }, [userId]);
 
-  // 2️⃣ Cargar pedidos del paciente
+  // Cargar pedidos
   useEffect(() => {
     if (!pacienteId) return;
 
@@ -74,7 +80,6 @@ const Historial = () => {
           `)
           .eq("paciente_id", pacienteId)
           .order("fecha_pedido", { ascending: false });
-
         if (error) throw error;
         setPedidos(data || []);
       } catch (err) {
@@ -88,7 +93,7 @@ const Historial = () => {
     loadPedidos();
   }, [pacienteId]);
 
-  // 🎨 Utilidades visuales
+  // Colores e íconos de estado
   const getEstadoColor = (estado) => {
     switch (estado) {
       case "pendiente":
@@ -117,7 +122,17 @@ const Historial = () => {
     }
   };
 
-  // 🧱 Renderizado principal
+  // Aplicar filtro y paginación
+  const pedidosFiltrados = filtroEstado
+    ? pedidos.filter((pedido) => pedido.estado === filtroEstado)
+    : pedidos;
+
+  const totalPages = Math.ceil(pedidosFiltrados.length / itemsPerPage);
+  const currentPedidos = pedidosFiltrados.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div className="flex">
       <div className="bg-gray-50 min-h-screen flex-1">
@@ -126,83 +141,78 @@ const Historial = () => {
           <h1 className="text-2xl font-semibold text-gray-800">Historial de pedidos</h1>
         </div>
 
-        {loading && (
-          <p className="text-center text-gray-600 py-6">
-            Cargando tus pedidos...
-          </p>
-        )}
+        <div className="p-6">
+          {loading && <p className="text-center text-gray-600 py-6">Cargando tus pedidos...</p>}
+          {error && <div className="text-center text-red-600 bg-red-50 py-3 rounded-lg mb-4">{error}</div>}
 
-        {error && (
-          <div className="text-center text-red-600 bg-red-50 py-3 rounded-lg mb-4">
-            {error}
-          </div>
-        )}
+          {!loading && !error && (
+            <div className="bg-white p-6 rounded-2xl shadow-md">
+              {pedidos.length > 0 ? (
+                <>
+                  {/* Filtro */}
+                  <FiltroEstados filtro={filtroEstado} setFiltro={setFiltroEstado} />
 
-        {!loading && !error && (
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            {pedidos.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                  <thead className="bg-blue-500 text-white">
-                    <tr>
-                      <th className="py-3 px-4 text-left font-semibold">#</th>
-                      <th className="py-3 px-4 text-left font-semibold">Estado</th>
-                      <th className="py-3 px-4 text-left font-semibold">Dirección</th>
-                      <th className="py-3 px-4 text-left font-semibold">Fecha del Pedido</th>
-                      <th className="py-3 px-4 text-left font-semibold">Entrega Estimada</th>
-                      <th className="py-3 px-4 text-left font-semibold">Entrega Real</th>
-                      <th className="py-3 px-4 text-left font-semibold text-center">Prioridad</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pedidos.map((pedido, index) => (
-                      <tr
-                        key={pedido.id}
-                        className="border-b border-gray-200 hover:bg-blue-50 transition-all"
-                      >
-                        <td className="py-3 px-4 text-gray-700 font-medium">{index + 1}</td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${getEstadoColor(pedido.estado)}`}
-                          >
-                            {getEstadoIcon(pedido.estado)} {pedido.estado}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
-                          <FaMapMarkerAlt className="text-gray-400" />{" "}
-                          {pedido.direccion_entrega || "Sin dirección"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {pedido.fecha_pedido
-                            ? new Date(pedido.fecha_pedido).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {pedido.fecha_entrega_estimada
-                            ? new Date(pedido.fecha_entrega_estimada).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {pedido.fecha_entrega_real
-                            ? new Date(pedido.fecha_entrega_real).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-700 font-semibold text-center">
-                          {pedido.prioridad}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-10 text-gray-600">
-                <FaTimesCircle className="text-4xl mx-auto text-gray-400 mb-3" />
-                <p>No tienes pedidos registrados todavía.</p>
-              </div>
-            )}
-          </div>
-        )}
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                      <thead className="bg-blue-500 text-white">
+                        <tr>
+                          <th className="py-3 px-4 text-left font-semibold">#</th>
+                          <th className="py-3 px-4 text-left font-semibold">Estado</th>
+                          <th className="py-3 px-4 text-left font-semibold">Dirección</th>
+                          <th className="py-3 px-4 text-left font-semibold">Fecha del Pedido</th>
+                          <th className="py-3 px-4 text-left font-semibold">Entrega Estimada</th>
+                          <th className="py-3 px-4 text-left font-semibold">Entrega Real</th>
+                          <th className="py-3 px-4 text-left font-semibold text-center">Prioridad</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentPedidos.map((pedido, index) => (
+                          <tr key={pedido.id} className="border-b border-gray-200 hover:bg-blue-50 transition-all">
+                            <td className="py-3 px-4 text-gray-700 font-medium">
+                              {(currentPage - 1) * itemsPerPage + index + 1}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${getEstadoColor(pedido.estado)}`}>
+                                {getEstadoIcon(pedido.estado)} {pedido.estado}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
+                              <FaMapMarkerAlt className="text-gray-400" /> {pedido.direccion_entrega || "Sin dirección"}
+                            </td>
+                            <td className="py-3 px-4 text-gray-600">
+                              {pedido.fecha_pedido ? new Date(pedido.fecha_pedido).toLocaleDateString() : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-gray-600">
+                              {pedido.fecha_entrega_estimada ? new Date(pedido.fecha_entrega_estimada).toLocaleDateString() : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-gray-600">
+                              {pedido.fecha_entrega_real ? new Date(pedido.fecha_entrega_real).toLocaleDateString() : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-gray-700 font-semibold text-center">{pedido.prioridad}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Paginación */}
+                  {totalPages > 1 && (
+                    <Paginacion
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={(page) => setCurrentPage(page)}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-10 text-gray-600">
+                  <FaTimesCircle className="text-4xl mx-auto text-gray-400 mb-3" />
+                  <p>No tienes pedidos registrados todavía.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

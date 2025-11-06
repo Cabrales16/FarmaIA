@@ -137,7 +137,7 @@ const DetallePedido = () => {
         {/* Botones de acción */}
         <div className="flex gap-4">
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/inicio/mis-pedidos")}
             className="px-5 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium transition mb-10"
           >
             Volver al Panel

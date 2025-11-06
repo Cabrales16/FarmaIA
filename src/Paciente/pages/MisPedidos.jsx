@@ -1,203 +1,192 @@
 import { useState, useEffect } from "react";
-import SideBar from "../components/SideBar";
-import supabase from "../../api/supabase";
-
+import { useNavigate } from "react-router-dom";
+import ButtonNuevoPedido from "../components/Mis-pedidos/ButtonNuevoPedido";
+import Pagination from "../components/Mis-pedidos/Paginacion";
 import {
-  FaMapMarkerAlt,
-  FaCalendarAlt,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaClock,
-  FaRoute,
+  FaTruck,
+  FaPills,
+  FaSpinner,
 } from "react-icons/fa";
+import supabase from "../../api/supabase";
+import UseAuth from "../../context/UseAuth";
 
-const Historial = () => {
-  const [isExpanded, setIsExpanded] = useState(true);
+const MisPedidos = () => {
+  const navigate = useNavigate();
+  const { userId } = UseAuth();
+
+  // 🔹 Estados principales
+  const [nombre, setNombre] = useState("");
+  const [pacienteId, setPacienteId] = useState(null);
   const [pedidos, setPedidos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 🔄 Cargar pedidos desde Supabase
+  // 🔹 Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const totalPaginas = Math.ceil(pedidos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const pedidosActuales = pedidos.slice(startIndex, startIndex + itemsPerPage);
+
+  const cambiarPagina = (page) => {
+    if (page >= 1 && page <= totalPaginas) setCurrentPage(page);
+  };
+
+  // 🔹 Cargar usuario y paciente
   useEffect(() => {
-    const fetchPedidos = async () => {
-      setLoading(true);
-      setError(null);
+    if (!userId) return;
+
+    const loadPaciente = async () => {
+      try {
+        const { data: usuarioData, error: usuarioError } = await supabase
+          .from("usuario")
+          .select("id, nombre")
+          .eq("auth_id", userId)
+          .single();
+
+        if (usuarioError) throw usuarioError;
+        if (!usuarioData) throw new Error("Usuario no encontrado.");
+
+        setNombre(usuarioData.nombre);
+
+        const { data: pacienteData, error: pacienteError } = await supabase
+          .from("pacientes")
+          .select("id")
+          .eq("usuario_id", usuarioData.id)
+          .single();
+
+        if (pacienteError) throw pacienteError;
+        if (!pacienteData) throw new Error("Paciente no encontrado.");
+
+        setPacienteId(pacienteData.id);
+      } catch (err) {
+        console.error("Error al obtener paciente:", err.message);
+      }
+    };
+
+    loadPaciente();
+  }, [userId]);
+
+  // 🔹 Cargar pedidos del paciente
+  useEffect(() => {
+    if (!pacienteId) return;
+
+    const loadPedidos = async () => {
       try {
         const { data, error } = await supabase
           .from("pedidos")
-          .select(
-            `
-            id,
-            paciente_id,
-            fecha_pedido,
-            estado,
-            prioridad,
-            direccion_entrega,
-            fecha_entrega_estimada,
-            fecha_entrega_real
-          `
-          )
+          .select("*")
+          .eq("paciente_id", pacienteId)
           .order("fecha_pedido", { ascending: false });
 
         if (error) throw error;
-
         setPedidos(data || []);
       } catch (err) {
         console.error("Error al cargar pedidos:", err.message);
-        setError("No se pudo cargar el historial de pedidos.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPedidos();
-  }, []);
+    loadPedidos();
+  }, [pacienteId]);
 
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case "pendiente":
-        return "bg-yellow-100 text-yellow-700";
-      case "en_ruta":
-        return "bg-blue-100 text-blue-700";
-      case "entregado":
-        return "bg-green-100 text-green-700";
-      case "fallido":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  const getEstadoIcon = (estado) => {
-    switch (estado) {
-      case "entregado":
-        return <FaCheckCircle />;
-      case "fallido":
-        return <FaTimesCircle />;
-      case "en_ruta":
-        return <FaRoute />;
-      default:
-        return <FaClock />;
-    }
-  };
+  // 🔹 Mostrar spinner si está cargando
+  if (loading)
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <FaSpinner className="text-4xl text-blue-600 animate-spin" />
+        <p className="mt-2 text-gray-600 font-medium">
+          Cargando tus pedidos...
+        </p>
+      </div>
+    );
 
   return (
-    <div className="flex">
-      <SideBar isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+    <div className="bg-gray-50 min-h-screen flex-1">
+      {/* Encabezado */}
+      <div className="border-b border-gray-300 flex items-center justify-between p-6 bg-white shadow-sm">
+        <h1 className="text-2xl font-semibold text-gray-800">Mis pedidos</h1>
+      </div>
 
-      <div
-        className={`bg-gray-50 min-h-screen ${
-          isExpanded ? "ml-64" : "ml-22"
-        } flex-1 p-6 transition-all`}
-      >
-        <div className="border-b border-gray-300 flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
-            <FaCalendarAlt className="text-blue-500" /> Historial de Pedidos
-          </h1>
-          <p className="text-sm text-gray-500">
-            Registro completo de pedidos registrados en el sistema
-          </p>
+      {/* Bienvenida */}
+      <div className="text-white bg-blue-500 m-6 p-6 rounded-2xl shadow-md">
+        <p className="text-lg font-medium">
+          Bienvenido, paciente <span className="font-bold">{nombre}</span>.
+        </p>
+        <p className="mt-2 text-sm text-blue-100">
+          Gestione sus pedidos de medicamentos y consulte el estado de entregas.
+        </p>
+        <div className="mt-4 flex gap-3">
+          <ButtonNuevoPedido />
+        </div>
+      </div>
+
+      {/* Pedidos actuales */}
+      <div className="m-6 mt-10 bg-white p-6 rounded-2xl shadow-md">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+            <FaPills className="text-blue-500" /> Pedidos actuales
+          </h2>
+          <button
+            onClick={() => navigate("/inicio/historial")}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+          >
+            Ver historial completo →
+          </button>
         </div>
 
-        {/* Estado de carga o error */}
-        {loading && (
-          <p className="text-center text-gray-600 py-6">
-            Cargando historial de pedidos...
-          </p>
-        )}
-        {error && (
-          <div className="text-center text-red-600 bg-red-50 py-3 rounded-lg mb-4">
-            {error}
-          </div>
-        )}
+        <div className="flex flex-col gap-4">
+          {pedidosActuales.map((pedido) => (
+            <div
+              key={pedido.id}
+              onClick={() => navigate(`/inicio/mis-pedidos/${pedido.id}`)}
+              className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between hover:shadow-md hover:bg-blue-50 transition-all cursor-pointer"
+            >
+              <div>
+                <p className="font-semibold text-gray-800">
+                  Pedido #{pedido.id}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Estado:{" "}
+                  <span
+                    className={`font-medium ${
+                      pedido.estado === "entregado"
+                        ? "text-green-600"
+                        : pedido.estado === "en_ruta"
+                        ? "text-blue-600"
+                        : pedido.estado === "pendiente"
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {pedido.estado}
+                  </span>
+                </p>
+              </div>
+              <div className="text-sm text-gray-600 mt-2 sm:mt-0">
+                <span className="font-medium">Fecha Pedido:</span>{" "}
+                {pedido.fecha_pedido
+                  ? new Date(pedido.fecha_pedido).toLocaleString("es-ES", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "Sin fecha"}
+              </div>
+            </div>
+          ))}
+        </div>
 
-        {/* Tabla */}
-        {!loading && !error && (
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            {pedidos.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                  <thead className="bg-blue-500 text-white">
-                    <tr>
-                      <th className="py-3 px-4 text-left font-semibold">#</th>
-                      <th className="py-3 px-4 text-left font-semibold">Paciente ID</th>
-                      <th className="py-3 px-4 text-left font-semibold">Estado</th>
-                      <th className="py-3 px-4 text-left font-semibold">Dirección</th>
-                      <th className="py-3 px-4 text-left font-semibold">
-                        Fecha del Pedido
-                      </th>
-                      <th className="py-3 px-4 text-left font-semibold">
-                        Entrega Estimada
-                      </th>
-                      <th className="py-3 px-4 text-left font-semibold">
-                        Entrega Real
-                      </th>
-                      <th className="py-3 px-4 text-left font-semibold">Prioridad</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pedidos.map((pedido, index) => (
-                      <tr
-                        key={pedido.id}
-                        className="border-b border-gray-200 hover:bg-blue-50 transition-all"
-                      >
-                        <td className="py-3 px-4 text-gray-700 font-medium">
-                          {index + 1}
-                        </td>
-                        <td className="py-3 px-4 text-gray-800">
-                          {pedido.paciente_id}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold ${getEstadoColor(
-                              pedido.estado
-                            )}`}
-                          >
-                            {getEstadoIcon(pedido.estado)} {pedido.estado}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600 flex items-center gap-2">
-                          <FaMapMarkerAlt className="text-gray-400" />{" "}
-                          {pedido.direccion_entrega || "Sin dirección"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {pedido.fecha_pedido
-                            ? new Date(pedido.fecha_pedido).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {pedido.fecha_entrega_estimada
-                            ? new Date(
-                                pedido.fecha_entrega_estimada
-                              ).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {pedido.fecha_entrega_real
-                            ? new Date(
-                                pedido.fecha_entrega_real
-                              ).toLocaleDateString()
-                            : "-"}
-                        </td>
-                        <td className="py-3 px-4 text-gray-700 font-semibold text-center">
-                          {pedido.prioridad}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-10 text-gray-600">
-                <FaTimesCircle className="text-4xl mx-auto text-gray-400 mb-3" />
-                <p>No hay pedidos registrados todavía.</p>
-              </div>
-            )}
-          </div>
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPaginas}
+          onPageChange={cambiarPagina}
+        />
       </div>
     </div>
   );
 };
 
-export default Historial;
+export default MisPedidos;
