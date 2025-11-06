@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "./AdminLayout";
 
 // Páginas del administrador
@@ -10,15 +10,13 @@ export default function AdminRouter() {
   return (
     <Routes>
       <Route element={<AdminLayout />}>
-        {/* Ruta por defecto: /admin → Dashboard */}
-        <Route index element={<Dashboard />} />
+        <Route index element={<Navigate to="dashboard" replace />} />
 
         {/* Páginas del administrador */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="pedidos" element={<GestionPedidos />} />
         <Route path="paciente" element={<GestionPacientes />} />
 
-        {/* Fallback: cualquier ruta no existente → Dashboard */}
         <Route path="*" element={<Dashboard />} />
       </Route>
     </Routes>

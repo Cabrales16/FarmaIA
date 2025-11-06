@@ -83,6 +83,7 @@ const SideBar = ({ isExpanded, setIsExpanded, mobileOpen, setMobileOpen }) => {
             {isExpanded && <span>Dashboard</span>}
           </NavLink>
 
+
           <NavLink
             to="/inicio/pedidos"
             className={({ isActive }) =>
