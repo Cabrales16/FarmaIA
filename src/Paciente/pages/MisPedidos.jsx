@@ -5,8 +5,6 @@ import Pagination from "../components/Mis-pedidos/Paginacion";
 import {
   FaTruck,
   FaPills,
-  FaRoute,
-  FaMapMarkedAlt,
   FaSpinner,
 } from "react-icons/fa";
 import supabase from "../../api/supabase";
@@ -21,9 +19,6 @@ const MisPedidos = () => {
   const [pacienteId, setPacienteId] = useState(null);
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [errorRuta, setErrorRuta] = useState(null);
-  const [resultadoRuta, setResultadoRuta] = useState(null);
-  const [loadingRuta, setLoadingRuta] = useState(false);
 
   // 🔹 Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,7 +37,6 @@ const MisPedidos = () => {
 
     const loadPaciente = async () => {
       try {
-        // Obtener ID y nombre del usuario autenticado
         const { data: usuarioData, error: usuarioError } = await supabase
           .from("usuario")
           .select("id, nombre")
@@ -52,10 +46,8 @@ const MisPedidos = () => {
         if (usuarioError) throw usuarioError;
         if (!usuarioData) throw new Error("Usuario no encontrado.");
 
-        // Guardar nombre
         setNombre(usuarioData.nombre);
 
-        // Obtener paciente asociado
         const { data: pacienteData, error: pacienteError } = await supabase
           .from("pacientes")
           .select("id")
@@ -98,38 +90,6 @@ const MisPedidos = () => {
     loadPedidos();
   }, [pacienteId]);
 
-  // 🔹 Simular generación de ruta
-  const generarRuta = async () => {
-    setLoadingRuta(true);
-    setErrorRuta(null);
-    setResultadoRuta(null);
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      setResultadoRuta({
-        success: true,
-        mensaje:
-          "Ruta generada correctamente para los pacientes con dirección válida.",
-        totalPacientes: pedidos.length,
-        pacientesConDireccion: pedidos.filter((p) => p.direccion_entrega).length,
-        resumenTexto: pedidos
-          .map(
-            (p, i) =>
-              `${i + 1}️⃣ ${p.id ? `Pedido #${p.id}` : "Pedido"} - ${
-                p.direccion_entrega || "Sin dirección"
-              }`
-          )
-          .join("\n"),
-      });
-    } catch (err) {
-      setErrorRuta("Error al generar la ruta.");
-      console.error(err);
-    } finally {
-      setLoadingRuta(false);
-    }
-  };
-
   // 🔹 Mostrar spinner si está cargando
   if (loading)
     return (
@@ -158,75 +118,8 @@ const MisPedidos = () => {
         </p>
         <div className="mt-4 flex gap-3">
           <ButtonNuevoPedido />
-          <button
-            onClick={generarRuta}
-            disabled={loadingRuta}
-            className="bg-white text-blue-600 hover:bg-blue-50 font-semibold py-2 px-4 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-          >
-            {loadingRuta ? (
-              <>
-                <span className="animate-spin">⏳</span>
-                Generando...
-              </>
-            ) : (
-              <>
-                <FaRoute />
-                Generar Ruta de Entrega
-              </>
-            )}
-          </button>
         </div>
       </div>
-
-      {/* Errores */}
-      {errorRuta && (
-        <div className="mx-6 mb-4 p-4 bg-red-50 border border-red-300 text-red-700 rounded-xl flex items-start gap-3">
-          <span className="text-xl">❌</span>
-          <div>
-            <p className="font-semibold">Error al generar la ruta</p>
-            <p className="text-sm">{errorRuta}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Resultado de la ruta */}
-      {resultadoRuta && resultadoRuta.success && (
-        <div className="mx-6 mb-6 bg-white p-6 rounded-2xl shadow-md border-2 border-green-500">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-              <FaMapMarkedAlt className="text-green-600" />
-              Ruta de Entrega Generada
-            </h3>
-            <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded-full">
-              ✅ {resultadoRuta.totalPacientes} pacientes
-            </span>
-          </div>
-
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">
-              {resultadoRuta.mensaje}
-            </p>
-            <p className="text-sm text-green-700 mt-1">
-              📍 Pacientes en la ruta: {resultadoRuta.totalPacientes} | Con
-              dirección válida: {resultadoRuta.pacientesConDireccion}
-            </p>
-          </div>
-
-          {resultadoRuta.resumenTexto && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <FaTruck className="text-blue-500" />
-                Orden de entregas (por prioridad):
-              </h4>
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto border border-gray-200">
-                <pre className="whitespace-pre-wrap text-sm font-mono text-gray-700">
-                  {resultadoRuta.resumenTexto}
-                </pre>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Pedidos actuales */}
       <div className="m-6 mt-10 bg-white p-6 rounded-2xl shadow-md">

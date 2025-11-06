@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import SideBar from "../Paciente/components/SideBar";
-import ChatN8n from "./components/chatn8n/ChatN8n";
+import { ChatN8N } from "./components/chatn8n/ChatN8n";
 import { FiMenu } from "react-icons/fi";
 
 export default function PacienteLayout() {
@@ -33,7 +33,7 @@ export default function PacienteLayout() {
         <Outlet />
       </main>
 
-      <ChatN8n />
+      <ChatN8N />
     </div>
   );
 }

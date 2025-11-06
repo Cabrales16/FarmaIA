@@ -23,12 +23,12 @@ import {
   YAxis,
   CartesianGrid,
 } from "recharts";
+import GenerarRutaButton from "../components/Dashboard/GenerarRutaButton";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { userId } = UseAuth();
 
-  // Estados
   const [adminName, setAdminName] = useState("");
   const [pedidosActivos, setPedidosActivos] = useState(0);
   const [pedidosEntregados, setPedidosEntregados] = useState(0);
@@ -37,7 +37,7 @@ const Dashboard = () => {
   const [estadisticaMensual, setEstadisticaMensual] = useState([]);
   const [estadoPedidos, setEstadoPedidos] = useState([]);
 
-  // 🔹 Obtener nombre del administrador autenticado
+  // 🔹 Obtener nombre del administrador
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
@@ -86,7 +86,7 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
-  // 🔹 Obtener pedidos recientes y estadísticas por mes/estado
+  // 🔹 Obtener pedidos recientes
   useEffect(() => {
     const fetchPedidos = async () => {
       try {
@@ -115,15 +115,18 @@ const Dashboard = () => {
         const pedidosFormateados = data.map((p) => ({
           id: p.id,
           paciente: p.pacientes?.usuario?.nombre || "Desconocido",
-          medicamento: p.pedido_detalle?.[0]?.medicamentos?.nombre || "Medicamento no especificado",
+          medicamento:
+            p.pedido_detalle?.[0]?.medicamentos?.nombre ||
+            "Medicamento no especificado",
           estado: p.estado,
           fecha: new Date(p.fecha_pedido).toLocaleDateString("es-CO"),
         }));
 
-        // Contar pedidos por mes
         const porMes = {};
         data.forEach((p) => {
-          const mes = new Date(p.fecha_pedido).toLocaleString("es-CO", { month: "short" });
+          const mes = new Date(p.fecha_pedido).toLocaleString("es-CO", {
+            month: "short",
+          });
           porMes[mes] = (porMes[mes] || 0) + 1;
         });
         const estadistica = Object.entries(porMes).map(([mes, cantidad]) => ({
@@ -131,7 +134,6 @@ const Dashboard = () => {
           cantidad,
         }));
 
-        // Contar pedidos por estado
         const porEstado = data.reduce((acc, p) => {
           acc[p.estado] = (acc[p.estado] || 0) + 1;
           return acc;
@@ -152,7 +154,6 @@ const Dashboard = () => {
     fetchPedidos();
   }, []);
 
-  // Colores para gráficos
   const COLORS = ["#2563EB", "#10B981", "#F59E0B", "#EF4444"];
 
   return (
@@ -170,6 +171,11 @@ const Dashboard = () => {
         <p className="mt-2 text-sm text-blue-100">
           Supervise pedidos, rutas de entrega y el estado general del sistema FarmaIA.
         </p>
+      </div>
+
+      {/* 🔹 Botón de generar ruta */}
+      <div className="m-6">
+        <GenerarRutaButton />
       </div>
 
       {/* Estadísticas generales */}
@@ -196,7 +202,6 @@ const Dashboard = () => {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 m-6">
-        {/* Pedidos por mes */}
         <div className="bg-white p-6 rounded-2xl shadow-md">
           <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <FaRoute className="text-blue-500" /> Pedidos por mes
@@ -216,7 +221,6 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Pedidos por estado */}
         <div className="bg-white p-6 rounded-2xl shadow-md">
           <h2 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <FaChartPie className="text-blue-500" /> Distribución de pedidos por estado
