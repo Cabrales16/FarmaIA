@@ -252,10 +252,10 @@ La imagen sirve el build estático con Nginx en http://localhost:8080
 
 ### GitHub Pages (demo)
 
-El workflow [`deploy-demo.yml`](.github/workflows/deploy-demo.yml) ejecuta lint, construye la demo y la publica en la rama `gh-pages` en cada push a `main`. GitHub Pages la sirve con su pipeline de **Jekyll** (que aquí solo entrega los archivos estáticos que genera Vite).
+El workflow [`deploy-demo.yml`](.github/workflows/deploy-demo.yml) ejecuta lint, construye la demo con Vite y la publica en cada push a `main` con el pipeline oficial de **Jekyll** de GitHub Pages (que aquí solo entrega los archivos estáticos de `dist/`).
 
-1. Haz push a `main` (o ejecuta el workflow desde la pestaña *Actions*) para que se cree la rama `gh-pages`.
-2. En el repositorio: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**.
+1. En el repositorio: **Settings → Pages → Source: GitHub Actions**.
+2. Haz push a `main` (o ejecuta el workflow desde la pestaña *Actions*).
 3. La demo queda en `https://<usuario>.github.io/<repositorio>/`.
 
 > Si el repositorio no se llama `FarmaIA`, ajusta `base` en [`vite.config.js`](vite.config.js).
