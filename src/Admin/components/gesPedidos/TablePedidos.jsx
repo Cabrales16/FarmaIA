@@ -1,10 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import supabase from "../../../api/supabase";
+import toast from "react-hot-toast";
+import { notifyDataChange, useDataRefresh } from "../../../common/dataEvents";
 import { FaBoxOpen, FaTruck, FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 
 const TablePedidos = ({ filtros, busqueda }) => {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const refresh = useDataRefresh("pedidos");
 
   useEffect(() => {
     const fetchPedidos = async () => {
@@ -25,7 +28,7 @@ const TablePedidos = ({ filtros, busqueda }) => {
       setLoading(false);
     };
     fetchPedidos();
-  }, []);
+  }, [refresh]);
 
   // Filtrado local
   const pedidosFiltrados = useMemo(() => {
@@ -49,6 +52,17 @@ const TablePedidos = ({ filtros, busqueda }) => {
       return matchBusqueda && matchEstado && matchPrioridad && matchFechas;
     });
   }, [pedidos, filtros, busqueda]);
+
+  const cambiarEstado = async (pedido, estado) => {
+    const cambios = {
+      estado,
+      fecha_entrega_real: estado === "entregado" ? new Date().toISOString() : null,
+    };
+    const { error } = await supabase.from("pedidos").update(cambios).eq("id", pedido.id);
+    if (error) return toast.error("No se pudo actualizar el estado.");
+    toast.success(`Pedido #${pedido.id} marcado como ${estado.replace("_", " ")}.`);
+    notifyDataChange("pedidos");
+  };
 
   const getEstadoIcon = (estado) => {
     switch (estado) {
@@ -79,6 +93,7 @@ const TablePedidos = ({ filtros, busqueda }) => {
             <thead className="bg-blue-600 text-white text-xs uppercase tracking-wide sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3">Paciente</th>
+                <th className="px-6 py-3">#</th>
                 <th className="px-6 py-3">Estado</th>
                 <th className="px-6 py-3">Prioridad</th>
                 <th className="px-6 py-3">Fecha Pedido</th>
@@ -91,10 +106,14 @@ const TablePedidos = ({ filtros, busqueda }) => {
                   <td className="px-6 py-3 font-medium text-gray-800 whitespace-nowrap">
                     {p.pacientes?.usuario?.nombre || "—"}
                   </td>
+                  <td className="px-6 py-3 text-gray-500">{p.id}</td>
                   <td className="px-6 py-3 font-semibold capitalize whitespace-nowrap">
                     {getEstadoIcon(p.estado)}
-                    <span
-                      className={
+                    <select
+                      value={p.estado}
+                      onChange={(e) => cambiarEstado(p, e.target.value)}
+                      title="Cambiar estado del pedido"
+                      className={`bg-transparent font-semibold capitalize cursor-pointer focus:outline-none ${
                         p.estado === "pendiente"
                           ? "text-yellow-600"
                           : p.estado === "en_ruta"
@@ -102,10 +121,13 @@ const TablePedidos = ({ filtros, busqueda }) => {
                           : p.estado === "entregado"
                           ? "text-green-600"
                           : "text-red-600"
-                      }
+                      }`}
                     >
-                      {p.estado.replace("_", " ")}
-                    </span>
+                      <option value="pendiente">pendiente</option>
+                      <option value="en_ruta">en ruta</option>
+                      <option value="entregado">entregado</option>
+                      <option value="fallido">fallido</option>
+                    </select>
                   </td>
                   <td className="px-6 py-3">{p.prioridad}</td>
                   <td className="px-6 py-3 whitespace-nowrap">

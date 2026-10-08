@@ -94,7 +94,7 @@ const PacienteFilters = ({ filtros, setFiltros }) => {
   };
 
   const filtrosVisibles = Object.entries(opciones).filter(
-    ([_, lista]) => lista?.length > 0
+    ([, lista]) => lista?.length > 0
   );
 
   return (

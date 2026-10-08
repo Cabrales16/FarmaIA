@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import supabase from "../../../api/supabase";
+import supabase, { isDemo } from "../../../api/supabase";
 import toast from "react-hot-toast";
 
 const Register = ({ login, setLogin }) => {
@@ -35,6 +35,11 @@ const Register = ({ login, setLogin }) => {
       }
     }
 
+    if (isDemo) {
+      toast.success("Registro exitoso. Ya puedes iniciar sesión.");
+      setLogin(true);
+      return;
+    }
     toast.success("Registro exitoso, revisa tu correo");
   };
 

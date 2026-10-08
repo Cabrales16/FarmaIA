@@ -1,0 +1,37 @@
+name: Deploy demo to GitHub Pages
+
+# Compila la demo y la publica en la rama gh-pages.
+# GitHub Pages (Settings → Pages → Deploy from a branch → gh-pages) la sirve
+# con su pipeline de Jekyll. Jekyll no compila React: aquí solo entrega los
+# archivos estáticos que genera Vite.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build:demo
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: dist
+          publish_branch: gh-pages
+          enable_jekyll: true

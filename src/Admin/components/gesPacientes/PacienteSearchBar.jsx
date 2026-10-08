@@ -9,7 +9,7 @@ const PacienteSearchBar = ({ busqueda, setBusqueda }) => {
       setBusqueda(tempBusqueda);
     }, 400);
     return () => clearTimeout(handler);
-  }, [tempBusqueda]);
+  }, [tempBusqueda, setBusqueda]);
 
   return (
     <div className="relative w-full sm:w-72">

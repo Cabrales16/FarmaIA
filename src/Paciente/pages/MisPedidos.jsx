@@ -9,10 +9,12 @@ import {
 } from "react-icons/fa";
 import supabase from "../../api/supabase";
 import UseAuth from "../../context/UseAuth";
+import { useDataRefresh } from "../../common/dataEvents";
 
 const MisPedidos = () => {
   const navigate = useNavigate();
   const { userId } = UseAuth();
+  const refresh = useDataRefresh("pedidos");
 
   // 🔹 Estados principales
   const [nombre, setNombre] = useState("");
@@ -60,6 +62,7 @@ const MisPedidos = () => {
         setPacienteId(pacienteData.id);
       } catch (err) {
         console.error("Error al obtener paciente:", err.message);
+        setLoading(false); // evita quedarse en el spinner si no hay perfil de paciente
       }
     };
 
@@ -88,7 +91,7 @@ const MisPedidos = () => {
     };
 
     loadPedidos();
-  }, [pacienteId]);
+  }, [pacienteId, refresh]);
 
   // 🔹 Mostrar spinner si está cargando
   if (loading)

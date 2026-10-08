@@ -2,6 +2,7 @@
 import { Navigate } from "react-router-dom";
 import { FaSpinner } from "react-icons/fa";
 import UseAuth from "../context/UseAuth";
+import supabase from "../api/supabase";
 import { useEffect, useState } from "react";
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -34,7 +35,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // 🔹 Si el rol no tiene acceso
   if (allowedRoles && !allowedRoles.includes(rol)) {
-    return <Navigate to="/unauthorized" replace />;
+    // Se muestra un aviso en vez de redirigir: /home reenvía a /inicio si hay sesión (bucle).
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-2 text-gray-700">
+        <p className="text-lg font-semibold">No tienes permisos para ver esta página.</p>
+        <button className="text-blue-600 underline" onClick={() => supabase.auth.signOut()}>
+          Cerrar sesión
+        </button>
+      </div>
+    );
   }
 
   // 🔹 Renderizar la página normalmente

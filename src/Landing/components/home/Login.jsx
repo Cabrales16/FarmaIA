@@ -1,12 +1,13 @@
 import { useForm } from "react-hook-form";
-import supabase from "../../../api/supabase";
+import supabase, { isDemo } from "../../../api/supabase";
+import { DEMO_ACCOUNTS } from "../../../mock/seed";
 import toast from "react-hot-toast";
 import useAuth from "../../../context/UseAuth";
 import { Navigate } from "react-router-dom";
 import { useState } from "react";
 
 const Login = ({ login, setLogin }) => {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, setValue } = useForm();
   const { setIsAuth, isAuth, setUserId, setRol } = useAuth();
   const [loading, setLoading] = useState(false);
 
@@ -97,6 +98,34 @@ const Login = ({ login, setLogin }) => {
           {loading ? "Cargando..." : "Iniciar sesión"}
         </button>
       </form>
+
+      {isDemo && (
+        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="mb-2 font-semibold">🧪 Demo: entra con una cuenta de prueba</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {[
+              ["Administrador", DEMO_ACCOUNTS.admin],
+              ["Paciente", DEMO_ACCOUNTS.paciente],
+            ].map(([label, acc]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => {
+                  setValue("email", acc.email);
+                  setValue("password", acc.password);
+                  handleSubmit(onSubmit)();
+                }}
+                className="flex-1 rounded-md border border-amber-300 bg-white px-3 py-1.5 font-medium hover:bg-amber-100"
+              >
+                Entrar como {label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-amber-800">
+            {DEMO_ACCOUNTS.admin.email} · {DEMO_ACCOUNTS.paciente.email} — clave: {DEMO_ACCOUNTS.admin.password}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

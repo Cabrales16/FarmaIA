@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Select from "react-select";
 import supabase from "../../../api/supabase";
+import { notifyDataChange, useDataRefresh } from "../../../common/dataEvents";
 import toast from "react-hot-toast";
 
 const FormPacientes = () => {
@@ -11,18 +12,24 @@ const FormPacientes = () => {
   const [municipios, setMunicipios] = useState([]);
 
   const { control, handleSubmit, reset } = useForm();
+  const refresh = useDataRefresh("pacientes");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usuariosRes, regimenesRes, epsRes, municipiosRes] = await Promise.all([
+        const [usuariosRes, regimenesRes, epsRes, municipiosRes, pacientesRes] = await Promise.all([
           supabase.from("usuario").select("id, nombre, documento").eq("perfil_id", 3),
           supabase.from("regimen").select("id, tipo"),
           supabase.from("eps").select("id, nombre"),
           supabase.from("municipios").select("id, nombre"),
+          supabase.from("pacientes").select("usuario_id"),
         ]);
 
-        if (usuariosRes.data) setUsuarios(usuariosRes.data);
+        if (usuariosRes.data) {
+          // Solo usuarios que aún no tienen perfil de paciente
+          const conPerfil = new Set((pacientesRes.data || []).map((p) => p.usuario_id));
+          setUsuarios(usuariosRes.data.filter((u) => !conPerfil.has(u.id)));
+        }
         if (regimenesRes.data) setRegimenes(regimenesRes.data);
         if (epsRes.data) setEpsList(epsRes.data);
         if (municipiosRes.data) setMunicipios(municipiosRes.data);
@@ -33,7 +40,7 @@ const FormPacientes = () => {
     };
 
     fetchData();
-  }, []);
+  }, [refresh]);
 
   const usuarioOptions = usuarios.map((u) => ({
     value: u.id,
@@ -64,6 +71,7 @@ const FormPacientes = () => {
     } else {
       toast.success("Paciente creado con éxito.");
       reset();
+      notifyDataChange("pacientes");
     }
   };
 

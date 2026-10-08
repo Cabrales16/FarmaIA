@@ -7,7 +7,7 @@ const Home = () => {
   const [login, setLogin] = useState(true);
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center  bg-sky-100">
+    <div className="w-full min-h-screen flex justify-center items-center bg-sky-100">
       <div className="w-full max-w-4xl flex flex-col md:flex-row items-center justify-between gap-10 p-6 ">
         {/* Información */}
         <div className="flex flex-col gap-4 max-w-md text-center md:text-left">

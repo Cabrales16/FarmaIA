@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Select from "react-select";
 import supabase from "../../../api/supabase";
+import { notifyDataChange } from "../../../common/dataEvents";
 import toast from "react-hot-toast";
 
 const AsignarEnfermedades = () => {
@@ -51,6 +52,7 @@ const AsignarEnfermedades = () => {
 
       if (error) throw error;
       toast.success("Enfermedades asignadas correctamente.");
+      notifyDataChange("pacientes");
       setSelectedEnfermedades([]);
     } catch (err) {
       console.error(err);

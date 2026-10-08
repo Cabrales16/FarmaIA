@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import supabase from "../../../api/supabase";
+import { notifyDataChange } from "../../../common/dataEvents";
 import { useForm, Controller } from "react-hook-form";
 import Select from "react-select";
 import { FaPlus } from "react-icons/fa";
@@ -139,6 +140,7 @@ const FormPedidos = () => {
     toast.success("Pedido creado con éxito ✅", { id: toastIds.success });
     reset();
     setDetalles([]);
+    notifyDataChange("pedidos");
   };
 
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import supabase from "../../../api/supabase";
+import { useDataRefresh } from "../../../common/dataEvents";
 import PacienteFilters from "./PacienteFilters";
 import PacienteSearchBar from "./PacienteSearchBar";
 
@@ -7,6 +8,7 @@ const TablePacientes = () => {
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const refresh = useDataRefresh("pacientes");
   const [busqueda, setBusqueda] = useState("");
   const [filtros, setFiltros] = useState({
     regimen: [],
@@ -52,7 +54,7 @@ const TablePacientes = () => {
     };
 
     fetchPacientes();
-  }, []);
+  }, [refresh]);
 
   // 🧮 Aplicar búsqueda y filtros locales
   const pacientesFiltrados = useMemo(() => {

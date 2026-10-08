@@ -1,5 +1,40 @@
-# 💊 Sistema de Gestión Farmacéutica FarmaIA – SENASoft 2025
-## 📌 Descripción General
+<div align="center">
+
+# 💊 FarmaIA
+
+**Acceso equitativo a medicamentos para pacientes con enfermedades crónicas**
+
+Sistema de gestión farmacéutica desarrollado en **SENASoft 2025** por el equipo **PowerLead**.
+
+[![Demo en vivo](https://img.shields.io/badge/▶_Demo_en_vivo-GitHub_Pages-2563EB?style=for-the-badge)](https://cabrales16.github.io/FarmaIA/)
+
+![React](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?logo=supabase&logoColor=white)
+![n8n](https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white)
+![Leaflet](https://img.shields.io/badge/Leaflet-199900?logo=leaflet&logoColor=white)
+
+![Panel del administrador](docs/screenshots/admin-dashboard.png)
+
+</div>
+
+---
+
+## 📑 Contenido
+
+- [Descripción general](#-descripción-general)
+- [Demo en vivo](#-demo-en-vivo)
+- [Galería](#-galería)
+- [Arquitectura](#-arquitectura-del-proyecto)
+- [Agente de IA (MCP)](#-integración-con-inteligencia-artificial-agente-mcp)
+- [Estructura del proyecto](#-estructura-del-proyecto)
+- [Instalación y ejecución local](#-instalación-y-ejecución-local)
+- [Despliegue](#-despliegue)
+- [Futuras mejoras](#-futuras-mejoras)
+- [Equipo](#-powerlead---equipo)
+
+## 📌 Descripción general
 
 El <b>Sistema de Gestión Farmacéutica</b> es un aplicativo web diseñado para optimizar la comunicación y gestión de pedidos de medicamentos entre pacientes y administradores de entidades médicas.
 
@@ -17,16 +52,68 @@ El sistema permite:
 - Controlar pedidos, inventarios y entregas.
 - Administrar datos de la entidad médica mediante un panel seguro.
 
+## 🎮 Demo en vivo
+
+👉 **https://cabrales16.github.io/FarmaIA/**
+
+La demo es **100 % funcional y no necesita backend**: se ejecuta íntegramente en el navegador con un servidor simulado (`src/mock`) que imita la API de Supabase y guarda los cambios en `localStorage`. Puedes crear pedidos, cambiar estados, registrar usuarios y generar rutas; tus cambios solo existen en tu navegador y puedes restaurarlos en cualquier momento con **«Restaurar datos»** (esquina inferior izquierda).
+
+| Perfil | Correo | Contraseña |
+|---|---|---|
+| 🧑‍💼 Administrador | `admin@farmaia.demo` | `demo1234` |
+| 👩‍⚕️ Paciente | `paciente@farmaia.demo` | `demo1234` |
+
+> En la pantalla de inicio hay botones de acceso rápido para ambos perfiles. También puedes pulsar **Registrarme** para crear tu propia cuenta de paciente.
+
+**Qué probar**
+
+| Como administrador | Como paciente |
+|---|---|
+| Ver KPIs y gráficos en el panel de control | Ver tus pedidos y abrir el detalle con seguimiento y mapa |
+| Seleccionar pedidos y **generar una ruta optimizada** (NN + 2-opt), con mapa y descarga GPX | Crear un **nuevo pedido** eligiendo medicamentos y ubicación en el mapa |
+| Crear pedidos y **cambiar su estado** desde la tabla | **Confirmar la recepción** de un pedido en ruta |
+| Dar de alta pacientes y asignarles enfermedades crónicas | Consultar el historial con filtros |
+| Filtrar pacientes por EPS, régimen, municipio o enfermedad | Hablar con el **asistente virtual** («medicamentos», «mis pedidos», «pedir losartán») |
+
+> **Nota:** el asistente de la demo es un simulador por reglas. El agente real (n8n + MCP + IA) requiere servicios externos; ver [más abajo](#-integración-con-inteligencia-artificial-agente-mcp).
+
+## 🖼️ Galería
+
+| Inicio de sesión | Rutas optimizadas |
+|:---:|:---:|
+| ![Login](docs/screenshots/login.png) | ![Ruta](docs/screenshots/admin-ruta.png) |
+| **Gestión de pedidos** | **Gestión de pacientes** |
+| ![Pedidos](docs/screenshots/admin-pedidos.png) | ![Pacientes](docs/screenshots/admin-pacientes.png) |
+| **Mis pedidos (paciente)** | **Detalle de un pedido** |
+| ![Mis pedidos](docs/screenshots/paciente-pedidos.png) | ![Detalle](docs/screenshots/paciente-detalle.png) |
+| **Historial** | **Asistente virtual** |
+| ![Historial](docs/screenshots/paciente-historial.png) | ![Chat](docs/screenshots/paciente-chat.png) |
+
 ## 🧩 Arquitectura del Proyecto
 
 El proyecto sigue una arquitectura <b>modular</b>, <b>escalable</b> y <b>basada en servicios</b>, con integración de herramientas de automatización e infraestructura en la nube.
+
+```mermaid
+flowchart LR
+    subgraph Cliente["Frontend · React + Vite"]
+        P[Módulo Paciente]
+        A[Módulo Administrador]
+        D["api/supabase.js"]
+        P --> D
+        A --> D
+    end
+    D -- "producción" --> S[(Supabase<br/>PostgreSQL + Auth)]
+    D -- "VITE_DEMO_MODE=true" --> M["Mock en navegador<br/>(localStorage)"]
+    P -. chat .-> N[n8n] --> AG[Agente MCP] --> S
+```
 
 ### 🧱 Frontend
 
 - <b>Framework</b>: React + Vite ⚡
 - <b>Lenguaje</b>: JavaScript (JSX)
-- <b>Estilos</b>: CSS modular / TailwindCSS (en módulos específicos)
+- <b>Estilos</b>: TailwindCSS
 - <b>Gestión de estados</b>: Context API
+- <b>Mapas y rutas</b>: Leaflet + OSRM, optimización propia (vecino más cercano + 2-opt)
 - <b>Comunicación con backend</b>: SDK de Supabase (REST + Auth)
 
 ### ⚙️ Backend
@@ -40,7 +127,8 @@ El proyecto sigue una arquitectura <b>modular</b>, <b>escalable</b> y <b>basada 
     - Conexión con el <b>agente inteligente (MCP)</b>.
 
 ### ☁️ Infraestructura y despliegue
-- <b>Render</b> → Hosting del frontend.
+- <b>GitHub Pages</b> → Demo pública del frontend (modo demo, sin backend).
+- <b>Render</b> → Hosting del frontend en producción.
 - <b>Supabase</b> → Hosting del backend y base de datos.
 - <b>Docker</b> → Contenedorización y gestión del entorno de desarrollo.
 - <b>GitHub</b> → Control de versiones y colaboración.
@@ -66,6 +154,8 @@ Este agente se comunica con Supabase y otros servicios para <b>automatizar proce
 - Prompt principal: mcp/prompts/main.prompt.
 - Variables sensibles gestionadas en .env (no versionadas por seguridad).
 
+> El cliente MCP y los flujos de n8n viven fuera de este repositorio (solo el widget de chat está aquí). La URL del webhook se configura con `VITE_N8N_WEBHOOK_URL`.
+
 ## 🗂️ Estructura del Proyecto
 
 ```
@@ -76,9 +166,10 @@ src/
 ├── Paciente/        # Módulos y vistas para pacientes
 ├── Protected/       # Rutas protegidas (autenticación)
 │
-├── api/             # Servicios y conexiones con Supabase
+├── api/             # Cliente de datos: Supabase real o mock según el modo
+├── mock/            # Backend simulado de la demo (cliente, datos semilla, chat, banner)
 ├── assets/          # Recursos estáticos (iconos, imágenes)
-├── common/          # Componentes compartidos
+├── common/          # Componentes compartidos (router, geo/TSP, eventos de datos)
 ├── context/         # Context API y estados globales
 │
 ├── App.jsx          # Punto de entrada principal de React
@@ -92,14 +183,14 @@ src/
 
 - Node.js `>= 18`
 - Docker (opcional, recomendado para entorno de desarrollo)
-- Cuenta en <b>Supabase</b>
+- Cuenta en <b>Supabase</b> (no necesaria en modo demo)
 - Variables de entorno configuradas (`.env`)
 
 ### 🔧 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/<usuario>/<repositorio>.git
-cd <repositorio>
+git clone https://github.com/Cabrales16/FarmaIA.git
+cd FarmaIA
 ```
 
 ### 📦 2. Instalar dependencias
@@ -108,24 +199,28 @@ cd <repositorio>
 npm install
 ```
 
-### ⚙️ 3. Configurar variables de entorno
+### ⚡ 3a. Modo demo (sin backend)
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+```bash
+npm run dev:demo
+```
+
+Abre http://localhost:5173/FarmaIA/ y entra con las [cuentas de la demo](#-demo-en-vivo).
+
+### ⚙️ 3b. Modo completo (con Supabase)
+
+Copia `.env.example` a `.env` y completa tus valores:
 
 ```bash
 VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_KEY=public-anon-key
-VITE_API_URL=http://localhost:3000
+VITE_SUPABASE_ANON_KEY=public-anon-key
+# Opcionales
+VITE_N8N_WEBHOOK_URL=https://tu-instancia.app.n8n.cloud/webhook/<id>/chat
+VITE_DEPOT_LAT=4.7110
+VITE_DEPOT_LNG=-74.0721
 ```
 
-### 🐳 4. (Opcional) Ejecutar con Docker
-
-```bash
-docker build -t gestion-farmaceutica .
-docker run -p 5173:5173 gestion-farmaceutica
-```
-
-### 🖥️ 5. Iniciar el entorno de desarrollo
+Luego:
 
 ```bash
 npm run dev
@@ -133,7 +228,41 @@ npm run dev
 
 La aplicación estará disponible en http://localhost:5173
 
-## 🧩 Despliegue en Producción
+### 🐳 4. (Opcional) Ejecutar con Docker
+
+```bash
+docker build -t gestion-farmaceutica .
+docker run -p 8080:80 gestion-farmaceutica
+```
+
+La imagen sirve el build estático con Nginx en http://localhost:8080
+
+### 📜 Scripts disponibles
+
+| Script | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo contra Supabase |
+| `npm run dev:demo` | Servidor de desarrollo en modo demo |
+| `npm run build` | Build de producción |
+| `npm run build:demo` | Build de la demo (base `/FarmaIA/`, datos simulados) |
+| `npm run preview:demo` | Sirve localmente el build de la demo |
+| `npm run lint` | Análisis estático con ESLint |
+
+## 🧩 Despliegue
+
+### GitHub Pages (demo)
+
+El workflow [`deploy-demo.yml`](.github/workflows/deploy-demo.yml) ejecuta lint, construye la demo y la publica en la rama `gh-pages` en cada push a `main`. GitHub Pages la sirve con su pipeline de **Jekyll** (que aquí solo entrega los archivos estáticos que genera Vite).
+
+1. Haz push a `main` (o ejecuta el workflow desde la pestaña *Actions*) para que se cree la rama `gh-pages`.
+2. En el repositorio: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / `(root)`**.
+3. La demo queda en `https://<usuario>.github.io/<repositorio>/`.
+
+> Si el repositorio no se llama `FarmaIA`, ajusta `base` en [`vite.config.js`](vite.config.js).
+
+La demo usa `HashRouter`, por lo que las rutas tienen la forma `#/inicio/...` y no hacen falta redirecciones en el servidor.
+
+### Producción (Render)
 
 El despliegue está automatizado mediante <b>Render</b>.
 
@@ -154,19 +283,17 @@ Los pasos generales para un nuevo despliegue son:
 | **n8n Dashboard**    | Automatización de flujos y agentes                                  |
 | **Render Dashboard** | Despliegue y monitoreo de frontend                                  |
 
-
-## 👥 Colaboradores y Créditos
-
-Proyecto desarrollado en el marco de <b>SENASoft 2025</b> por el equipo <b>PowerLead</b>.
-Se priorizó la creación de soluciones inclusivas y accesibles para poblaciones vulnerables.
-
-
-🧠 Futuras Mejoras
+## 🧠 Futuras Mejoras
 
 - Implementación de módulo de repartidores con cálculo de rutas óptimas mediante IA.
 - Dashboard analítico para métricas médicas.
 - Sistema de notificaciones push y alertas de medicación.
 - Integración con sistemas de facturación y prescripción electrónica.
+
+## 👥 Colaboradores y Créditos
+
+Proyecto desarrollado en el marco de <b>SENASoft 2025</b> por el equipo <b>PowerLead</b>.
+Se priorizó la creación de soluciones inclusivas y accesibles para poblaciones vulnerables.
 
 ## 🤖 PowerLead - Equipo
 El equipo esta conformado por tres (3) integrantes desarrolladores de <b>FarmaIA</b>:

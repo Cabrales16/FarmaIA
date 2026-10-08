@@ -1,11 +1,17 @@
 import { useEffect } from "react";
-import "@n8n/chat/style.css";
-import { createChat } from "@n8n/chat";
+import { isDemo } from "../../../api/supabase";
+import DemoChat from "../../../mock/DemoChat";
 
-export const ChatN8N = () => {
+// Configurable con VITE_N8N_WEBHOOK_URL; se mantiene el webhook original como valor por defecto.
+const WEBHOOK_URL =
+  import.meta.env.VITE_N8N_WEBHOOK_URL ||
+  "https://andreeescabrales-17.app.n8n.cloud/webhook/8eae0654-59c3-4adc-8c74-26640b8be765/chat";
+
+function ChatN8NReal() {
   useEffect(() => {
-    createChat({
-      webhookUrl: 'https://andreeescabrales-17.app.n8n.cloud/webhook/8eae0654-59c3-4adc-8c74-26640b8be765/chat',
+    // Carga diferida: @n8n/chat pesa mucho y no se usa en la demo.
+    Promise.all([import("@n8n/chat"), import("@n8n/chat/style.css")]).then(([{ createChat }]) => createChat({
+      webhookUrl: WEBHOOK_URL,
       webhookConfig: {
         method: 'POST',
         headers: {}
@@ -32,7 +38,7 @@ export const ChatN8N = () => {
         },
       },
       enableStreaming: false,
-    });
+    }));
 
     // 🎨 Estilos personalizados del chat
     const root = document.documentElement;
@@ -73,4 +79,7 @@ export const ChatN8N = () => {
   }, []);
 
   return <div id="n8n-chat"></div>;
-};
+}
+
+// En la demo no hay n8n: se usa un asistente simulado con los datos locales.
+export const ChatN8N = () => (isDemo ? <DemoChat /> : <ChatN8NReal />);
