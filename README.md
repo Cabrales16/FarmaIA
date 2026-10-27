@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/banner.png" alt="FarmaIA: pedidos de medicamentos a domicilio con rutas de entrega en el mapa" width="100%">
+
 # 💊 FarmaIA
 
 **Acceso equitativo a medicamentos para pacientes con enfermedades crónicas**
